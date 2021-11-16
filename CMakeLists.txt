@@ -9,7 +9,27 @@ project(tuyang-depth-image-alignment)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  cv_bridge
+  sensor_msgs
+  message_filters
 )
+
+# ========================================
+# === OpenCV
+# ========================================
+find_package(OpenCV REQUIRED)
+if (NOT OpenCV_FOUND)
+    message(FATAL_ERROR "OpenCV library not found")
+else()
+    include_directories(${OpenCV_INCLUDE_DIRS})
+    include_directories(${OpenCV2_INCLUDE_DIRS})
+    # if(CMAKE_BUILD_TYPE STREQUAL Debug)
+    # link_directories(${OpenCV_LIB_DIR_DBG})
+    # else()
+    # link_directories(${OpenCV_LIB_DIR_OPT})
+    # endif()
+    link_directories(${OpenCV_LIB_DIR})
+endif()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -114,91 +134,57 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
+
+if (NOT TARGET tycam)
+    #only build samples
+    # option (OpenCV_STATIC OFF)
+    # set(INCLUDE_PATH ../include)
+    # include_directories(${INCLUDE_PATH})
+    set(ABSOLUTE_TARGET_LIB tycam)
+    add_library(${ABSOLUTE_TARGET_LIB} SHARED IMPORTED)
+    if (MSVC)#for windows
+        # set (LIB_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../lib/win/hostapp/)
+        # if(CMAKE_CL_64) #x64
+        #     set_property(TARGET ${ABSOLUTE_TARGET_LIB} PROPERTY IMPORTED_LOCATION ${LIB_ROOT_PATH}/x64/tycam.dll)
+        #     set_property(TARGET ${ABSOLUTE_TARGET_LIB} PROPERTY IMPORTED_IMPLIB  ${LIB_ROOT_PATH}/x64/tycam.lib)
+        # else()
+        #     set_property(TARGET ${ABSOLUTE_TARGET_LIB} PROPERTY IMPORTED_LOCATION ${LIB_ROOT_PATH}/x86/tycam.dll)
+        #     set_property(TARGET ${ABSOLUTE_TARGET_LIB} PROPERTY IMPORTED_IMPLIB ${LIB_ROOT_PATH}/x86/tycam.lib)
+        # endif()
+    else()
+      if(ARCH)
+          set_property(TARGET ${ABSOLUTE_TARGET_LIB} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/../lib/linux/lib_${ARCH}/libtycam.so)
+      else()
+          set(ABSOLUTE_TARGET_LIB -ltycam)
+      endif()
+    endif()
+endif()
+
+# ========================================
+# === common, build static lib to speed up
+# ========================================
+set(COMMON_SOURCES include/common/MatViewer.cpp include/common/TYThread.cpp)
+
+add_library(sample_common STATIC ${COMMON_SOURCES})
+if(UNIX)
+  target_link_libraries(sample_common pthread)
+endif()
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/tuyang-depth-image-alignment.cpp
 # )
 
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(depth2rgb_align src/test.cpp
+)
+add_dependencies(depth2rgb_align sample_common ${TARGET_LIB})
+target_link_libraries(depth2rgb_align sample_common ${catkin_LIBRARIES} ${ABSOLUTE_TARGET_LIB} ${OpenCV_LIBS})
 
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/tuyang-depth-image-alignment_node.cpp)
-
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
-#   ${catkin_LIBRARIES}
-# )
-
-#############
-## Install ##
-#############
-
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executable scripts (Python etc.) for installation
-## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark executables for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark libraries for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-# install(TARGETS ${PROJECT_NAME}
-#   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
-
-#############
-## Testing ##
-#############
-
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_tuyang-depth-image-alignment.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+add_executable(align_server src/alignment_server.cpp
+  src/alignment.cpp
+)
+add_dependencies(align_server sample_common ${TARGET_LIB})
+target_link_libraries(align_server sample_common ${catkin_LIBRARIES} ${ABSOLUTE_TARGET_LIB} ${OpenCV_LIBS} ${CLOUD_VIEWER})
