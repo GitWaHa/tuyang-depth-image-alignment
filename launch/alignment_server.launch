@@ -1,0 +1,9 @@
+<launch>
+    <node name="alignment_server" pkg="tuyang-depth-image-alignment" type="align_server" respawn="false" output="screen">
+        <param name="topicColorInfo" value="/camera/rgb/camera_info" />
+        <param name="topicDepthInfo" value="/camera/depth/camera_info" />
+        <param name="topicDepth" value="/camera/depth/image_raw" />
+        <param name="topicAlignDepth" value="/camera/depth/image_align" />
+    </node>
+
+</launch>

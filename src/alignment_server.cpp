@@ -46,9 +46,22 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "alignment_server");
 
-    AlignmentServer server("/camera/rgb/camera_info", "/camera/depth/camera_info",
-                           "/camera/depth/image_raw",
-                           "/camera/depth/image_align");
+    ros::NodeHandle nh("~");
+
+    std::string topicColorInfo, topicDepthInfo, topicDepth, topicAlignDepth;
+    nh.param("topicColorInfo", topicColorInfo, std::string("/camera/rgb/camera_info"));
+    nh.param("topicDepthInfo", topicDepthInfo, std::string("/camera/depth/camera_info"));
+    nh.param("topicDepth", topicDepth, std::string("/camera/depth/image_raw"));
+    nh.param("topicAlignDepth", topicAlignDepth, std::string("/camera/depth/image_align"));
+
+    ROS_INFO(topicColorInfo.c_str());
+    ROS_INFO(topicDepthInfo.c_str());
+    ROS_INFO(topicDepth.c_str());
+    ROS_INFO(topicAlignDepth.c_str());
+
+    AlignmentServer server(topicColorInfo, topicDepthInfo,
+                           topicDepth,
+                           topicAlignDepth);
 
     ROS_INFO("alignment_server is started");
     ros::spin();

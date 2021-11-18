@@ -34,6 +34,9 @@ Alignment::~Alignment()
 {
 }
 
+// TODO: 这里的rgb内参，rgb与ir外参，depth内参，畸变参数，需要修改成自己的相机参数
+// FIXME: rgb内参，depth内参目前是固定的，效果好一些，应该是自己标定的相机不如官方导致的
+// 查看方式可参考test.cpp代码查看
 void Alignment::cameraInfoToTyCalibInfo(const sensor_msgs::CameraInfo::ConstPtr &cameraInfo, TY_CAMERA_CALIB_INFO &calib, bool is_color)
 {
     static int width = 1280, height = 960;
