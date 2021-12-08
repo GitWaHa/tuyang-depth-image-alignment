@@ -17,6 +17,10 @@ AlignmentServer::AlignmentServer(std::string color_info_topic_name, std::string 
 
 AlignmentServer::~AlignmentServer()
 {
+    delete depth_img_sub_;
+    delete color_info_sub_;
+    delete depth_info_sub_;
+    delete sync_;
 }
 
 void AlignmentServer::subCallBack(const CameraInfo::ConstPtr &color_info, const CameraInfo::ConstPtr &depth_info, const DepthImageMsg::ConstPtr &depth_img)

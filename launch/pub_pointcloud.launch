@@ -1,0 +1,13 @@
+<launch>
+    <arg name="is_show" default="false" />
+
+    <node name="pub_pointcloud" pkg="tuyang-depth-image-alignment" type="pub_pointcloud" respawn="false" output="screen">
+        <param name="is_show" value="$(arg is_show)" />
+
+        <param name="topicColorInfo" value="/camera/rgb/camera_info" />
+        <param name="topicColor" value="/camera/rgb/image_rect_color" />
+        <param name="topicDepthInfo" value="/camera/depth/camera_info" />
+        <param name="topicDepth" value="/camera/depth/image_align" />
+        <param name="topicPointcloud" value="/camera/pointcloud" />
+    </node>
+</launch>

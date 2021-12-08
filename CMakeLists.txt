@@ -14,6 +14,12 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
 )
 
+# PCL 
+find_package(PCL REQUIRED)
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 # ========================================
 # === OpenCV
 # ========================================
@@ -188,3 +194,11 @@ add_executable(align_server src/alignment_server.cpp
 )
 add_dependencies(align_server sample_common ${TARGET_LIB})
 target_link_libraries(align_server sample_common ${catkin_LIBRARIES} ${ABSOLUTE_TARGET_LIB} ${OpenCV_LIBS} ${CLOUD_VIEWER})
+
+add_executable(pub_pointcloud src/pub_pointcloud.cpp
+)
+target_link_libraries(pub_pointcloud
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
+)
